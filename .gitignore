@@ -1,0 +1,257 @@
+# ============================================================
+# COMPREHENSIVE .GITIGNORE FOR FLUTTER ANDROID PROJECT
+# Ensures NO personal information, system paths, or IDs leak
+# ============================================================
+
+# ====================
+# SYSTEM & OS FILES
+# ====================
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+*.dmg
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ====================
+# IDE & EDITOR FILES
+# ====================
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+.idea_modules/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Atom
+.atom/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# NetBeans
+nbproject/
+nbbuild/
+nbdist/
+.nb-gradle/
+
+# ====================
+# FLUTTER / DART
+# ====================
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+/build/
+**/build/
+/coverage/
+**/doc/api/
+# Note: pubspec.lock IS committed for reproducible builds in GitHub Actions
+
+# Flutter generated files
+.packages
+.metadata
+
+# iOS specific Flutter files
+**/ios/Flutter/.last_build_id
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/App.framework
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/Generated.xcconfig
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+
+# documentation
+documentation/
+
+# ====================
+# ANDROID SPECIFIC
+# ====================
+# Gradle
+.gradle/
+**/android/.gradle/
+**/android/gradle-wrapper.jar
+**/android/gradlew
+**/android/gradlew.bat
+
+# Local properties (CONTAINS SYSTEM PATHS WITH USERNAME!)
+**/local.properties
+**/android/local.properties
+
+# Build outputs
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+**/android/captures/
+**/android/.cxx/
+
+# Generated files
+**/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+**/android/GeneratedPluginRegistrant.java
+
+# Signing keys (CRITICAL - NEVER COMMIT!)
+*.jks
+*.keystore
+**/key.properties
+**/upload-keystore.jks
+**/keystore.properties
+
+# ====================
+# BUILD ARTIFACTS
+# ====================
+*.apk
+*.aab
+*.ipa
+*.app
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Symbolication
+app.*.symbols
+*.dSYM.zip
+*.dSYM/
+
+# Obfuscation
+app.*.map.json
+
+# ====================
+# LOGS & TEMP FILES
+# ====================
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+*.class
+*.pyc
+*.pyo
+__pycache__/
+
+# ====================
+# ALL MD FILES
+# ====================
+*.md
+
+# ====================
+# MISCELLANEOUS
+# ====================
+.svn/
+.hg/
+.buildlog/
+.history/
+.swiftpm/
+migrate_working_dir/
+
+# Crash reports
+crash_log.txt
+crashlytics-build.properties
+
+# Firebase (may contain project IDs)
+google-services.json
+GoogleService-Info.plist
+
+# Environment files (may contain secrets)
+.env
+.env.*
+*.env
+
+# ====================
+# SECURITY & PRIVACY
+# ====================
+# Prevent accidental commit of sensitive data
+secrets/
+credentials/
+*.pem
+*.p12
+*.key
+*.crt
+*.cer
+
+# API keys or config files that might have keys
+config.local.*
+secrets.dart
+api_keys.dart
+
+# ====================
+# KEYSTORE & RELEASE SIGNING
+# ====================
+# Keystore files (CRITICAL - NEVER COMMIT!)
+*.jks
+*.keystore
+**/cozycourier-release.jks
+**/cozycourier-keystore-base64.txt
+**/keystore-base64.txt
+**/*-keystore-base64.txt
+
+# Key properties (contains passwords)
+**/key.properties
+**/keystore.properties
+
+# Generated signing files
+**/upload-keystore.jks
+**/release.keystore
+**/debug.keystore
+
+# Scripts output (keystore generation)
+scripts/*.jks
+scripts/*.keystore
+scripts/*-base64.txt
+scripts/*.txt
+
+# ====================
+# MACOS SPECIFIC
+# ====================
+**/macos/Flutter/ephemeral/
+**/macos/Pods/
+
+# ====================
+# WINDOWS SPECIFIC
+# ====================
+**/windows/flutter/ephemeral/
+
+# ====================
+# LINUX SPECIFIC
+# ====================
+**/linux/flutter/ephemeral/
+
+# ====================
+# WEB SPECIFIC
+# ====================
+**/web/.dart_tool/

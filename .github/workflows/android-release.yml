@@ -1,0 +1,246 @@
+# ============================================================
+# GitHub Actions Workflow: Android Release Build
+# Builds signed APK and AAB for The Cozy Courier
+# 
+# SECURITY: All sensitive values come from GitHub Secrets only.
+# No hardcoded passwords or keystore content.
+# ============================================================
+
+name: Android Release Build
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - release/*
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+          - release
+
+jobs:
+  build_android_release:
+    name: Build Signed APK & AAB
+    runs-on: ubuntu-latest
+    
+    # Prevent secrets from being printed in logs
+    env:
+      COZYCOURIER_KEYSTORE_BASE64: ${{ secrets.COZYCOURIER_KEYSTORE_BASE64 }}
+      COZYCOURIER_KEY_ALIAS: ${{ secrets.COZYCOURIER_KEY_ALIAS }}
+      COZYCOURIER_KEY_PASSWORD: ${{ secrets.COZYCOURIER_KEY_PASSWORD }}
+      COZYCOURIER_STORE_PASSWORD: ${{ secrets.COZYCOURIER_STORE_PASSWORD }}
+
+    steps:
+      # ==========================================
+      # STEP 1: Checkout Repository
+      # ==========================================
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ==========================================
+      # STEP 2: Validate Required Secrets
+      # ==========================================
+      - name: Validate secrets are configured
+        run: |
+          if [ -z "$COZYCOURIER_KEYSTORE_BASE64" ]; then
+            echo "::error::COZYCOURIER_KEYSTORE_BASE64 secret is not set"
+            exit 1
+          fi
+          if [ -z "$COZYCOURIER_KEY_ALIAS" ]; then
+            echo "::error::COZYCOURIER_KEY_ALIAS secret is not set"
+            exit 1
+          fi
+          if [ -z "$COZYCOURIER_KEY_PASSWORD" ]; then
+            echo "::error::COZYCOURIER_KEY_PASSWORD secret is not set"
+            exit 1
+          fi
+          if [ -z "$COZYCOURIER_STORE_PASSWORD" ]; then
+            echo "::error::COZYCOURIER_STORE_PASSWORD secret is not set"
+            exit 1
+          fi
+          echo "All required secrets are configured"
+
+      # ==========================================
+      # STEP 3: Setup Java JDK 17
+      # ==========================================
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      # ==========================================
+      # STEP 4: Setup Flutter
+      # ==========================================
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.0'
+          channel: 'stable'
+          cache: true
+
+      # ==========================================
+      # STEP 5: Verify Flutter Installation
+      # ==========================================
+      - name: Verify Flutter installation
+        run: |
+          flutter --version
+          flutter doctor -v
+
+      # ==========================================
+      # STEP 6: Get Flutter Dependencies
+      # ==========================================
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      # ==========================================
+      # STEP 7: Decode Keystore from Base64
+      # Keystore is decoded to a temporary location
+      # ==========================================
+      - name: Decode keystore from base64
+        run: |
+          echo "$COZYCOURIER_KEYSTORE_BASE64" | base64 --decode > android/app/cozycourier-release.jks
+          echo "Keystore decoded successfully"
+        shell: bash
+
+      # ==========================================
+      # STEP 8: Create key.properties File
+      # This file is used by build.gradle.kts for signing
+      # ==========================================
+      - name: Create key.properties
+        run: |
+          cat > android/key.properties << EOF
+          storePassword=$COZYCOURIER_STORE_PASSWORD
+          keyPassword=$COZYCOURIER_KEY_PASSWORD
+          keyAlias=$COZYCOURIER_KEY_ALIAS
+          storeFile=cozycourier-release.jks
+          EOF
+          echo "key.properties created successfully"
+        shell: bash
+
+      # ==========================================
+      # STEP 9: Clean Build Environment
+      # ==========================================
+      - name: Clean Flutter build
+        run: flutter clean
+
+      # ==========================================
+      # STEP 10: Get dependencies again after clean
+      # ==========================================
+      - name: Get dependencies after clean
+        run: flutter pub get
+
+      # ==========================================
+      # STEP 11: Build Release APK
+      # Builds signed APK in RELEASE mode only
+      # ==========================================
+      - name: Build Release APK
+        run: |
+          flutter build apk --release --no-tree-shake-icons
+          echo "APK build completed"
+
+      # ==========================================
+      # STEP 12: Build Release AAB (App Bundle)
+      # Builds signed AAB in RELEASE mode only
+      # ==========================================
+      - name: Build Release AAB
+        run: |
+          flutter build appbundle --release --no-tree-shake-icons
+          echo "AAB build completed"
+
+      # ==========================================
+      # STEP 13: Verify Builds are Release Mode
+      # ==========================================
+      - name: Verify release builds
+        run: |
+          if [ ! -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
+            echo "::error::Release APK not found!"
+            exit 1
+          fi
+          if [ ! -f "build/app/outputs/bundle/release/app-release.aab" ]; then
+            echo "::error::Release AAB not found!"
+            exit 1
+          fi
+          echo "Both release builds verified successfully"
+
+      # ==========================================
+      # STEP 14: Rename Artifacts with App Name
+      # ==========================================
+      - name: Rename build artifacts
+        run: |
+          mkdir -p release-artifacts
+          cp build/app/outputs/flutter-apk/app-release.apk release-artifacts/cozycourier.apk
+          cp build/app/outputs/bundle/release/app-release.aab release-artifacts/cozycourier.aab
+          echo "Artifacts renamed successfully"
+
+      # ==========================================
+      # STEP 15: Delete Keystore and Sensitive Files
+      # CRITICAL: Remove all sensitive data after build
+      # ==========================================
+      - name: Delete keystore and sensitive files
+        if: always()
+        run: |
+          rm -f android/app/cozycourier-release.jks
+          rm -f android/key.properties
+          echo "Sensitive files deleted"
+
+      # ==========================================
+      # STEP 16: Upload APK Artifact
+      # ==========================================
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cozycourier-apk
+          path: release-artifacts/cozycourier.apk
+          retention-days: 30
+          if-no-files-found: error
+
+      # ==========================================
+      # STEP 17: Upload AAB Artifact
+      # ==========================================
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cozycourier-aab
+          path: release-artifacts/cozycourier.aab
+          retention-days: 30
+          if-no-files-found: error
+
+      # ==========================================
+      # STEP 18: Upload Combined Artifacts
+      # ==========================================
+      - name: Upload all release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cozycourier-release-${{ github.sha }}
+          path: release-artifacts/
+          retention-days: 30
+          if-no-files-found: error
+
+      # ==========================================
+      # STEP 19: Build Summary
+      # ==========================================
+      - name: Build summary
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts Generated" >> $GITHUB_STEP_SUMMARY
+          echo "- **APK**: cozycourier.apk" >> $GITHUB_STEP_SUMMARY
+          echo "- **AAB**: cozycourier.aab" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Build Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Mode**: Release" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### File Sizes" >> $GITHUB_STEP_SUMMARY
+          ls -lh release-artifacts/ >> $GITHUB_STEP_SUMMARY
